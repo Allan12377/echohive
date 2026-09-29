@@ -74,5 +74,6 @@ volumes:
     name: whatsapp-clone_postgres_data
   redis-data:
   upload-data:
+    external: true
     name: echohive_uploads
 

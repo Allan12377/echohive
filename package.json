@@ -1,0 +1,20 @@
+{
+  "name": "echohive",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,magenta \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace=@echohive/api",
+    "dev:web": "npm run dev --workspace=@echohive/web",
+    "build": "npm run build --workspace=@echohive/api && npm run build --workspace=@echohive/web",
+    "db:generate": "npm run db:generate --workspace=@echohive/db",
+    "db:migrate": "npm run db:migrate --workspace=@echohive/db",
+    "db:deploy": "npm run db:deploy --workspace=@echohive/db",
+    "db:seed": "npm run db:seed --workspace=@echohive/db"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "setup": "integrated",
+  "languages": [
+    "JavaScript/TypeScript",
+    "TypeScript"
+  ],
+  "stacks": [
+    "Node.js"
+  ],
+  "markers": [
+    "package.json"
+  ],
+  "packageName": "kindred-chat",
+  "suggestedRun": "npm run dev",
+  "createdAt": "2026-09-29T14:02:09.307Z",
+  "tool": "xgrok"
+}

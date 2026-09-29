@@ -1,0 +1,180 @@
+// Prisma schema for the EchoHive project
+// Run `npm run prisma:migrate` after editing this file
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  avatarUrl    String?
+  about        String?  @db.VarChar(139)
+  businessName String?  @db.VarChar(80)
+  businessAbout String? @db.VarChar(500)
+  lastSeen     DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  sentMessages     Message[]      @relation("SentMessages")
+  participants     Participant[]
+  contactsOf       Contact[]      @relation("ContactOwner")
+  contactOf        Contact[]      @relation("ContactTarget")
+  listings         Listing[]
+  videoPosts       VideoPost[]
+  videoLikes       VideoLike[]
+  videoComments    VideoComment[]
+  statusUpdates    StatusUpdate[]
+
+  @@map("users")
+}
+
+model Contact {
+  id        String   @id @default(uuid())
+  ownerId   String
+  contactId String
+  createdAt DateTime @default(now())
+
+  owner   User @relation("ContactOwner", fields: [ownerId], references: [id])
+  contact User @relation("ContactTarget", fields: [contactId], references: [id])
+
+  @@unique([ownerId, contactId])
+  @@map("contacts")
+}
+
+model Listing {
+  id          String   @id @default(uuid())
+  sellerId    String
+  title       String   @db.VarChar(100)
+  description String   @db.VarChar(2000)
+  price       Decimal  @db.Decimal(12, 2)
+  currency    String   @default("USD") @db.VarChar(3)
+  imageUrl    String?
+  modelUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id])
+
+  @@index([isActive, createdAt])
+  @@index([sellerId, createdAt])
+  @@map("listings")
+}
+
+model VideoPost {
+  id        String   @id @default(uuid())
+  creatorId String
+  videoUrl  String
+  caption   String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  creator  User           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  likes    VideoLike[]
+  comments VideoComment[]
+
+  @@index([createdAt])
+  @@index([creatorId, createdAt])
+  @@map("video_posts")
+}
+
+model VideoLike {
+  id          String   @id @default(uuid())
+  videoPostId String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  videoPost VideoPost @relation(fields: [videoPostId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([videoPostId, userId])
+  @@index([videoPostId, createdAt])
+  @@map("video_likes")
+}
+
+model VideoComment {
+  id          String   @id @default(uuid())
+  videoPostId String
+  userId      String
+  content     String   @db.VarChar(1000)
+  createdAt   DateTime @default(now())
+
+  videoPost VideoPost @relation(fields: [videoPostId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([videoPostId, createdAt])
+  @@map("video_comments")
+}
+
+model StatusUpdate {
+  id        String   @id @default(uuid())
+  userId    String
+  mediaUrl  String
+  mediaType String   @db.VarChar(100)
+  caption   String?  @db.VarChar(280)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt, createdAt])
+  @@index([userId, createdAt])
+  @@map("status_updates")
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  isGroup   Boolean  @default(false)
+  directKey String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  participants Participant[]
+  messages     Message[]
+
+  @@map("conversations")
+}
+
+model Participant {
+  id             String   @id @default(uuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+  @@map("participants")
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  senderId       String
+  content        String?
+  mediaUrl       String?
+  attachmentName String?
+  attachmentType String?
+  attachmentSize Int?
+  status         MessageStatus @default(SENT)
+  createdAt      DateTime      @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@map("messages")
+}
